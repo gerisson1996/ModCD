@@ -7,10 +7,10 @@
 namespace app {
 class RepositoryProviderOffline : public RepositoryProvider {
    private:
-    app::ModCD &modCD;
+    app::ModCD& modCD;
 
    public:
-    RepositoryProviderOffline(app::ModCD &aModCD) noexcept;
+    RepositoryProviderOffline(app::ModCD& aModCD) noexcept;
 
     virtual ~RepositoryProviderOffline() = default;
 

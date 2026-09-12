@@ -12,23 +12,23 @@ constexpr size_t CURL_BUFFERS_SIZE = 1024 * 1024 * 10;
 constexpr char agent[] = MODCD_AGENT;
 
 struct InnerData {
-    utils::DownloadState *ds;
-    std::ofstream *file;
-    char *buffer;
+    utils::DownloadState* ds;
+    std::ofstream* file;
+    char* buffer;
     size_t bufferSize;
     size_t bufferPos;
 };
 
-size_t writeCallback(void *contents, size_t size, size_t nmemb, std::string *data) {
+size_t writeCallback(void* contents, size_t size, size_t nmemb, std::string* data) {
     const auto readSize = size * nmemb;
-    data->append(reinterpret_cast<const char *>(contents), readSize);
+    data->append(reinterpret_cast<const char*>(contents), readSize);
     return readSize;
 }
 
-size_t writeCallbackToFile(void *contents, size_t size, size_t nmemb, void *userp) {
-    InnerData *innerData = static_cast<InnerData *>(userp);
-    utils::DownloadState *ds = innerData->ds;
-    std::ofstream *file = innerData->file;
+size_t writeCallbackToFile(void* contents, size_t size, size_t nmemb, void* userp) {
+    InnerData* innerData = static_cast<InnerData*>(userp);
+    utils::DownloadState* ds = innerData->ds;
+    std::ofstream* file = innerData->file;
     const size_t totalSize = size * nmemb;
 
     if (!file || (ds && ds->toStop)) {
@@ -78,7 +78,7 @@ HttpRequester::~HttpRequester() {
     }
 }
 
-std::string HttpRequester::getFullUrl(const std::string &baseUrl, const std::string &url) {
+std::string HttpRequester::getFullUrl(const std::string& baseUrl, const std::string& url) {
     if (utils::startsWith(url, "http://") || utils::startsWith(url, "https://")) {
         return url;
     }
@@ -87,7 +87,7 @@ std::string HttpRequester::getFullUrl(const std::string &baseUrl, const std::str
            (url.front() == '/' ? url : "/" + url);
 }
 
-std::string HttpRequester::getText(const std::string &url, long timeout) const {
+std::string HttpRequester::getText(const std::string& url, long timeout) const {
     std::lock_guard<std::mutex> guard(curlMutex);
     std::string response;
 
@@ -116,8 +116,8 @@ std::string HttpRequester::getText(const std::string &url, long timeout) const {
     return response;
 }
 
-DownloadingResult HttpRequester::downloadFile(const std::string &url, const std::string &filePath,
-                                              DownloadState *ds) const {
+DownloadingResult HttpRequester::downloadFile(const std::string& url, const std::string& filePath,
+                                              DownloadState* ds) const {
     if (ds) {
         ds->alreadyDownloaded = 0;
         ds->totalSize = getFileSize(url);
@@ -173,7 +173,7 @@ DownloadingResult HttpRequester::downloadFile(const std::string &url, const std:
     return result;
 }
 
-long HttpRequester::getFileSize(const std::string &url) const {
+long HttpRequester::getFileSize(const std::string& url) const {
     std::lock_guard<std::mutex> guard(curlMutex);
     CURLcode res;
     long file_size = -1;

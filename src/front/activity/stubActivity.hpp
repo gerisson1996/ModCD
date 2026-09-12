@@ -7,12 +7,12 @@
 namespace front {
 class StubActivity : public brls::Activity {
    private:
-    brls::Box *box;
-    brls::Label *messageLbl;
+    brls::Box* box;
+    brls::Label* messageLbl;
 
    public:
-    StubActivity(std::string &&message, const NVGcolor textColor = MCDWhite);
+    StubActivity(std::string&& message, const NVGcolor textColor = MCDWhite);
     ~StubActivity();
-    brls::View *createContentView() override;
+    brls::View* createContentView() override;
 };
 }  // namespace front

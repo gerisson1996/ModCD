@@ -15,7 +15,7 @@
 
 namespace front {
 
-GamesListView::GamesListView(app::ModCD &aModCD)
+GamesListView::GamesListView(app::ModCD& aModCD)
     : brls::Box(brls::Axis::COLUMN),
       modCD(aModCD),
       initTextForLineEdit(utils::Localization::get("GamesListView.SearchLineEdit.Placeholder")),
@@ -52,7 +52,7 @@ GamesListView::GamesListView(app::ModCD &aModCD)
 
                 this->registerAction("", brls::ControllerButton::BUTTON_X,
                                      std::bind(&LineEdit::onClick, this->lineEdit, std::placeholders::_1));
-                this->registerAction("", brls::ControllerButton::BUTTON_B, [this](brls::View *) {
+                this->registerAction("", brls::ControllerButton::BUTTON_B, [this](brls::View*) {
                     this->onSearchTextChanged("");
                     this->lineEdit->setCurrentText("");
                     return true;
@@ -69,7 +69,7 @@ GamesListView::GamesListView(app::ModCD &aModCD)
                 } else {
                     try {
                         checkUpdate();
-                    } catch (const utils::CURLException &curlException) {
+                    } catch (const utils::CURLException& curlException) {
                         MODCD_LOG_ERROR("[{}]: Check update timeout", __PRETTY_FUNCTION__);
                     }
                 }
@@ -85,8 +85,8 @@ GamesListView::GamesListView(app::ModCD &aModCD)
 bool GamesListView::prepareGames() {
     try {
         this->modCD.init();
-        if (this->modCD.supportedGames.empty()) {
-            bool isOnlineMode = this->modCD.isOnlineMode();
+        bool isOnlineMode = this->modCD.isOnlineMode();
+        if (this->modCD.supportedGames.empty() && (this->modCD.unsupportedGames.empty() || !isOnlineMode)) {
             brls::Application::pushActivity(
                 new StubActivity(utils::Localization::get(isOnlineMode ? "Errors.NoSupportedModsOrGames"
                                                                        : "Errors.NoSupportedModsOrGamesOffline"),
@@ -95,7 +95,7 @@ bool GamesListView::prepareGames() {
             return false;
         }
         return true;
-    } catch (const app::RepositoryAccessException &exception) {
+    } catch (const app::RepositoryAccessException& exception) {
         brls::Application::pushActivity(
             new StubActivity(utils::Localization::getInterpolated("Errors.RepositoryAccessException",
                                                                   {{"url", this->modCD.getConfig().repositoryUrl}})),
@@ -114,7 +114,7 @@ void GamesListView::checkUpdate() {
         this->updateDialog->addButton(
             utils::Localization::get("GamesListView.UpdateDialog.UpdateButton"), [this, releaseData]() {
                 brls::Application::setGlobalQuit(false);
-                for (brls::Button *title : this->gameTiles) {
+                for (brls::Button* title : this->gameTiles) {
                     title->setState(brls::ButtonState::DISABLED);
                 }
                 this->toast->start(utils::Localization::get("GamesListView.Toast.DownloadIsStarting"), ToastColor::OK);
@@ -130,7 +130,7 @@ void GamesListView::checkUpdate() {
                         brls::Application::setGlobalQuit(true);
                         this->toast->start(utils::Localization::get("GamesListView.Toast.UpdateError"),
                                            ToastColor::ERROR);
-                        for (brls::Button *title : this->gameTiles) {
+                        for (brls::Button* title : this->gameTiles) {
                             title->setState(brls::ButtonState::ENABLED);
                         }
                     }
@@ -141,8 +141,8 @@ void GamesListView::checkUpdate() {
     }
 }
 
-void GamesListView::onSearchTextChanged(const std::string &newText) {
-    for (GameTileView *gameTile : this->gameTiles) {
+void GamesListView::onSearchTextChanged(const std::string& newText) {
+    for (GameTileView* gameTile : this->gameTiles) {
         bool isVisible = true;
         if (!newText.empty()) {
             std::wstring gameName = utils::to_wstring(gameTile->game.name);
@@ -171,22 +171,22 @@ void GamesListView::onSearchTextChanged(const std::string &newText) {
 }
 
 void GamesListView::addIconsRow() {
-    brls::Box *row = nullptr;
+    brls::Box* row = nullptr;
     int n = 3;
     int count = 0;
 
-    for (const core::Game &game : this->modCD.supportedGames) {
+    for (const core::Game& game : this->modCD.supportedGames) {
         if (count % n == 0) {
             row = new brls::Box(brls::Axis::ROW);
             this->listContent->addView(row);
             this->rows.push_back(row);
         }
 
-        GameTileView *gameTileView = new GameTileView(game);
+        GameTileView* gameTileView = new GameTileView(game, true, false);
         this->gameTiles.push_back(gameTileView);
         gameTileView->setMargins(20.0f, 25.0f, 10.0f, 25.0f);
 
-        gameTileView->registerClickAction([this, &game](brls::View *view) {
+        gameTileView->registerClickAction([this, &game](brls::View* view) {
             MODCD_LOG_DEBUG("Icon was clicked: {}", game.name);
             this->modCD.setCurrentTitleId(game.titleIDToString());
             brls::Application::pushActivity(new ModsListActivity(this->modCD, game, this),
@@ -199,33 +199,66 @@ void GamesListView::addIconsRow() {
 
         count++;
     }
+    for (const core::UnsupportedGame& unsupportedGame : this->modCD.unsupportedGames) {
+        if (count % n == 0) {
+            row = new brls::Box(brls::Axis::ROW);
+            this->listContent->addView(row);
+            this->rows.push_back(row);
+        }
+
+        GameTileView* gameTileView = new GameTileView(unsupportedGame.game, false, unsupportedGame.modVersions.empty());
+        this->gameTiles.push_back(gameTileView);
+        gameTileView->setMargins(20.0f, 25.0f, 10.0f, 25.0f);
+
+        if (!unsupportedGame.modVersions.empty()) {
+            gameTileView->registerClickAction([this, &unsupportedGame](brls::View* view) {
+                MODCD_LOG_DEBUG("Icon was clicked: {}", unsupportedGame.game.name);
+                this->modCD.setCurrentTitleId(unsupportedGame.game.titleIDToString());
+                brls::Application::pushActivity(new ModsListActivity(this->modCD, unsupportedGame.game, this),
+                                                brls::TransitionAnimation::NONE);
+                return true;
+            });
+        } else {
+            gameTileView->registerClickAction([this, &unsupportedGame](brls::View* view) {
+                MODCD_LOG_DEBUG("Icon was clicked: {}", unsupportedGame.game.name);
+                this->toast->start(utils::Localization::get("GamesListView.Toast.NoModError"), ToastColor::ERROR);
+                return true;
+            });
+        }
+
+        row->addView(gameTileView);
+        row->setAlignItems(brls::AlignItems::FLEX_START);
+
+        count++;
+    }
     this->updateGameIconsStatuses();
 }
 
 void GamesListView::updateGameIconsStatuses() {
-    const std::list<core::MergedInfo> &mergedInfoObjects = this->modCD.getMergedInfoObjects();
+    const std::list<core::MergedInfo>& mergedInfoObjects = this->modCD.getMergedInfoObjects();
 
-    for (brls::View *rowView : this->listContent->getChildren()) {
-        brls::Box *row = dynamic_cast<brls::Box *>(rowView);
+    for (brls::View* rowView : this->listContent->getChildren()) {
+        brls::Box* row = dynamic_cast<brls::Box*>(rowView);
         if (!row) {
             continue;
         }
 
-        for (brls::View *childView : row->getChildren()) {
-            GameTileView *gameTileView = dynamic_cast<GameTileView *>(childView);
+        for (brls::View* childView : row->getChildren()) {
+            GameTileView* gameTileView = dynamic_cast<GameTileView*>(childView);
             if (!gameTileView) {
                 continue;
             }
 
             std::vector<core::EnvironmentStatus> statuses;
-            for (const auto &info : mergedInfoObjects) {
+            for (const auto& info : mergedInfoObjects) {
                 if (info.titleId == gameTileView->game.titleIDToString()) {
                     statuses.push_back(info.status);
                 }
             }
 
-            if (statuses.empty()) {
+            if (statuses.empty() && gameTileView->supported) {
                 gameTileView->setBorderThickness(0.0f);
+                gameTileView->setBorderColor(brls::TRANSPARENT);
                 continue;
             }
 
@@ -242,25 +275,29 @@ void GamesListView::updateGameIconsStatuses() {
                 }
             };
 
-            core::EnvironmentStatus topStatus = *std::max_element(
-                statuses.begin(), statuses.end(), [&priority](auto a, auto b) { return priority(a) < priority(b); });
+            auto topStatus = std::max_element(statuses.begin(), statuses.end(),
+                                              [&priority](auto a, auto b) { return priority(a) < priority(b); });
 
-            switch (topStatus) {
-                case core::EnvironmentStatus::INSTALLED:
-                    gameTileView->setBorderColor(MCDGreen);
-                    break;
-                case core::EnvironmentStatus::MOD_DOWNLOADED:
-                    gameTileView->setBorderColor(MCDBlue);
-                    break;
-                case core::EnvironmentStatus::SCREENSHOTS_DOWNLOADED:
-                    gameTileView->setBorderColor(MCDYellow);
-                    break;
-                default:
-                    gameTileView->setBorderColor(MCDGrey);
-                    break;
+            if (topStatus == statuses.end() && !gameTileView->supported) {
+                gameTileView->setBorderColor(MCDRed);
+            } else {
+                switch (*topStatus) {
+                    case core::EnvironmentStatus::INSTALLED:
+                        gameTileView->setBorderColor(MCDGreen);
+                        break;
+                    case core::EnvironmentStatus::MOD_DOWNLOADED:
+                        gameTileView->setBorderColor(MCDBlue);
+                        break;
+                    case core::EnvironmentStatus::SCREENSHOTS_DOWNLOADED:
+                        gameTileView->setBorderColor(MCDYellow);
+                        break;
+                    default:
+                        gameTileView->setBorderColor(MCDGrey);
+                        break;
+                }
             }
 
-            gameTileView->setBorderThickness(8.0f);
+            gameTileView->setBorderThickness(2.0f);
         }
     }
 }
@@ -273,7 +310,7 @@ void GamesListView::resortIconsRow() {
     int row = 0;
     bool focusWasGiven = false;
 
-    for (GameTileView *gameTile : this->gameTiles) {
+    for (GameTileView* gameTile : this->gameTiles) {
         if (gameTile->getVisibility() == brls::Visibility::VISIBLE) {
             this->rows[row]->addView(gameTile);
             if (count++ % n == 0) {
@@ -295,8 +332,8 @@ void GamesListView::resortIconsRow() {
     this->list->setContentOffsetY(0.0f, false);
 }
 
-void GamesListView::draw(NVGcontext *vg, float x, float y, float width, float height, brls::Style style,
-                         brls::FrameContext *ctx) {
+void GamesListView::draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style,
+                         brls::FrameContext* ctx) {
     if (this->updateDS.alreadyDownloaded != 0) {
         const std::string progress = utils::calculateProgress(this->totalUpdateSize, this->updateDS.alreadyDownloaded);
         this->toast->start(progress, ToastColor::OK, 1000);

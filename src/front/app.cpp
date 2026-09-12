@@ -7,7 +7,7 @@
 #include <utils/localization.hpp>
 
 namespace front {
-App::App(int argc, char *argv[]) : modCD(argc, argv) {}
+App::App(int argc, char* argv[]) : modCD(argc, argv) {}
 
 void App::start() {
     this->modCD.preInit();

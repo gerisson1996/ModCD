@@ -12,10 +12,10 @@ class Config {
     std::string loggingMode;
 
    public:
-    Config(const std::string &aRepositoryUrl, bool aLogging, std::string aLoggingMode) noexcept;
+    Config(const std::string& aRepositoryUrl, bool aLogging, std::string aLoggingMode) noexcept;
 
     nlohmann::json toJson() const;
 
-    static Config fromJson(const std::string &jsonString);
+    static Config fromJson(const std::string& jsonString);
 };
 }  // namespace app

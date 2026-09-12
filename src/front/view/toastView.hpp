@@ -13,16 +13,16 @@ enum class ToastColor { OK, ERROR, INFO, WARNING };
 
 class ToastView : public brls::Button {
    private:
-    brls::Box *root;
-    brls::Label *label;
+    brls::Box* root;
+    brls::Label* label;
     std::unique_ptr<CallbackTimer> timer;
     brls::Point centerPoint;
 
    public:
-    ToastView(brls::Box *aRoot, const brls::Point &aCenterPoint, float fontSize = 24);
+    ToastView(brls::Box* aRoot, const brls::Point& aCenterPoint, float fontSize = 24);
     ~ToastView();
 
-    void start(const std::string &text, const ToastColor color, brls::Time duration = 2000);
+    void start(const std::string& text, const ToastColor color, brls::Time duration = 2000);
 
     void onTimeout();
 };

@@ -6,7 +6,7 @@
 #include <utils/utils.hpp>
 
 namespace app {
-RepositoryProviderOffline::RepositoryProviderOffline(app::ModCD &aModCD) noexcept : modCD(aModCD) {}
+RepositoryProviderOffline::RepositoryProviderOffline(app::ModCD& aModCD) noexcept : modCD(aModCD) {}
 
 std::unique_ptr<core::Repository> RepositoryProviderOffline::getRepository() {
     MODCD_LOG_DEBUG("[{}]: start", __PRETTY_FUNCTION__);
@@ -14,10 +14,10 @@ std::unique_ptr<core::Repository> RepositoryProviderOffline::getRepository() {
     std::string offlineString = "offline";
     std::vector<core::RepContent> contents;
 
-    for (core::MergedInfo &mergedInfo : this->modCD.getMergedInfoObjects()) {
+    for (core::MergedInfo& mergedInfo : this->modCD.getMergedInfoObjects()) {
         auto existingRepContent = std::find_if(
             contents.begin(), contents.end(),
-            [&mergedInfo](const core::RepContent &repContent) { return repContent.titleId == mergedInfo.titleId; });
+            [&mergedInfo](const core::RepContent& repContent) { return repContent.titleId == mergedInfo.titleId; });
 
         core::ModInfo modInfo(mergedInfo.name, mergedInfo.description, mergedInfo.type, mergedInfo.author,
                               mergedInfo.toJson().dump(), std::vector<uint64_t>{mergedInfo.supportedVersion});

@@ -15,12 +15,12 @@ enum class DownloadingResult { OK, ERROR, STOP };
 
 class CURLException : public std::exception {
    public:
-    const char *what() const noexcept override { return "CURL Exception"; }
+    const char* what() const noexcept override { return "CURL Exception"; }
 };
 
 class HttpRequester {
    private:
-    void *curl;
+    void* curl;
     static std::once_flag curlInitFlag;
     static std::once_flag curlCleanUpFlag;
     static std::mutex curlMutex;
@@ -29,12 +29,12 @@ class HttpRequester {
     HttpRequester();
     ~HttpRequester();
 
-    std::string getText(const std::string &url, long timeout = 5L) const;
+    std::string getText(const std::string& url, long timeout = 5L) const;
 
-    DownloadingResult downloadFile(const std::string &url, const std::string &filePath, DownloadState *ds) const;
+    DownloadingResult downloadFile(const std::string& url, const std::string& filePath, DownloadState* ds) const;
 
-    long getFileSize(const std::string &url) const;
+    long getFileSize(const std::string& url) const;
 
-    static std::string getFullUrl(const std::string &baseUrl, const std::string &url);
+    static std::string getFullUrl(const std::string& baseUrl, const std::string& url);
 };
 }  // namespace utils

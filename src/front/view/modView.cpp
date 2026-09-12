@@ -15,18 +15,18 @@
 #include <utils/utils.hpp>
 
 namespace front {
-void baImagePaths(std::list<std::filesystem::path> &paths) {
+void baImagePaths(std::list<std::filesystem::path>& paths) {
     MODCD_LOG_DEBUG("[{}]: start", __PRETTY_FUNCTION__);
     std::regex before_regex(R"(.*before_(\d+).*)");
     std::regex after_regex(R"(.*after_(\d+).*)");
     std::smatch match;
-    for (auto &before_path : paths) {
+    for (auto& before_path : paths) {
         std::string before_path_str = before_path.string();
 
         if (std::regex_match(before_path_str, match, before_regex)) {
             std::string before_path_number = match[1];
 
-            auto after_it = std::find_if(paths.begin(), paths.end(), [&](const std::filesystem::path &path) {
+            auto after_it = std::find_if(paths.begin(), paths.end(), [&](const std::filesystem::path& path) {
                 std::string path_str = path.string();
                 return std::regex_match(path_str, match, after_regex) && match[1] == before_path_number;
             });
@@ -54,7 +54,11 @@ bool ModView::xAction() {
         brls::Application::giveFocus(this->description);
     } else {
         this->flags.clearFlags(Flags::SCROLL_MODE);
-        brls::Application::giveFocus(this->downloadModBtn);
+        if (this->supported) {
+            brls::Application::giveFocus(this->downloadModBtn);
+        } else {
+            brls::Application::giveFocus(this->screenshotsBtn);
+        }
     }
     return true;
 }
@@ -146,12 +150,12 @@ bool ModView::downloadModAction() {
     return true;
 }
 
-void ModView::setFSOState(brls::Button *button, const std::string &buttonText) {
+void ModView::setFSOState(brls::Button* button, const std::string& buttonText) {
     this->setFlagsAndUpdateButtons(Flags::FSO_IN_PROGRESS);
     button->setText(buttonText);
 }
 
-void ModView::unsetFSOState(brls::Button *button, const std::string &buttonText) {
+void ModView::unsetFSOState(brls::Button* button, const std::string& buttonText) {
     this->clearFlagsAndUpdateButtons(Flags::FSO_IN_PROGRESS);
     button->setText(buttonText);
 }
@@ -330,11 +334,11 @@ bool ModView::uninstallAction() {
         std::lock_guard<std::mutex> guard(asyncMutex);
         brls::sync([this]() { setFSOState(this->uninstallBtn, this->uninstallingText); });
         this->modCD.getMcds()->executeRule("uninstall");
-        this->modCD.saveMergedInfo(core::EnvironmentStatus::UNINSTALLED);
         brls::sync([this]() {
             bool isModDownloaded = this->modCD.isModDownloaded();
             if (!isModDownloaded) {
                 utils::removeAndEmpty(this->modCD.getMcdsPath());
+                this->modCD.saveMergedInfo(core::EnvironmentStatus::UNINSTALLED);
             }
             unsetFSOState(this->uninstallBtn, this->uninstall);
             this->toast->start(utils::Localization::get("ModView.Toast.ModHasBeenUninstalled"), ToastColor::OK);
@@ -354,7 +358,7 @@ void ModView::clearFlagsAndUpdateButtons(uint32_t flagsToClear) {
 }
 
 void ModView::prepareOnline() {
-    const auto &currentModEntry = this->modCD.getCurrentModEntry();
+    const auto& currentModEntry = this->modCD.getCurrentModEntry();
     this->mcdsSize = modCD.getDownloadFileSize(currentModEntry.mcds);
     this->modSize = modCD.getDownloadFileSize(currentModEntry.mod);
     this->downloadBtnText = utils::Localization::getInterpolated("ModView.ModButton.Download",
@@ -376,7 +380,7 @@ void ModView::prepareOnline() {
         this->screenshotsBtnText = utils::Localization::getInterpolated(
             "ModView.ScreenshotsButton.Download", {{"size", utils::convertToUnit(screenshotsSize)}});
         this->screenshotsBtn->setText(this->screenshotsBtnText);
-        this->screenshotsBtn->registerClickAction([this](brls::View *view) { return screenshotsAction(); });
+        this->screenshotsBtn->registerClickAction([this](brls::View* view) { return screenshotsAction(); });
         this->screenshotsBtn->setMinWidth(this->screenshotsBtn->getWidth());
         this->screenshotsBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
 
@@ -397,7 +401,7 @@ void ModView::prepareOnline() {
         this->clearScreenshotsBtn->setVisibility(brls::Visibility::GONE);
     }
 
-    this->downloadModBtn->registerClickAction([this](brls::View *view) { return downloadModAction(); });
+    this->downloadModBtn->registerClickAction([this](brls::View* view) { return downloadModAction(); });
 }
 
 void ModView::prepareOffline() {
@@ -408,7 +412,7 @@ void ModView::prepareOffline() {
     if (this->modCD.isScreenshotsDownloaded()) {
         this->screenshotsBtn->setState(brls::ButtonState::ENABLED);
         this->screenshotsBtn->setText(this->viewScreenshotsText);
-        this->screenshotsBtn->registerClickAction([this](brls::View *view) { return screenshotsActionOffline(); });
+        this->screenshotsBtn->registerClickAction([this](brls::View* view) { return screenshotsActionOffline(); });
     } else {
         this->screenshotsBtn->setState(brls::ButtonState::DISABLED);
     }
@@ -417,9 +421,10 @@ void ModView::prepareOffline() {
     this->downloadModBtn->setText(utils::Localization::get("ModView.ModButton.Placeholder"));
 }
 
-ModView::ModView(app::ModCD &aModCD)
+ModView::ModView(app::ModCD& aModCD, bool aSupported)
     : brls::Box(brls::Axis::COLUMN),
       modCD(aModCD),
+      supported(aSupported),
       viewScreenshotsText(utils::Localization::get("ModView.ScreenshotsButton.ViewScreenshots")),
       screenshotsText(utils::Localization::get("ModView.ScreenshotsButton.Placeholder")),
       clearText(utils::Localization::get("ModView.ClearScreenshotsButton.Placeholder")),
@@ -464,7 +469,7 @@ ModView::ModView(app::ModCD &aModCD)
 
     this->clearScreenshotsBtn->setText(this->clearText);
 
-    brls::Label *descriptionLbl = new brls::Label();
+    brls::Label* descriptionLbl = new brls::Label();
     descriptionLbl->setIsWrapping(true);
     descriptionLbl->setMargins(10.0f, 30.0f, 10.0f, 10.0f);
     descriptionLbl->setText(this->modCD.getDescription());
@@ -480,38 +485,46 @@ ModView::ModView(app::ModCD &aModCD)
     this->clearScreenshotsBtn->setStyle(&MCD_BUTTONSTYLE_PRIMARY);
     this->uninstallBtn->setStyle(&MCD_BUTTONSTYLE_PRIMARY);
 
-    brls::Box *descriptionSecondContainer = new brls::Box();
+    brls::Box* descriptionSecondContainer = new brls::Box();
     this->description->setHeightPercentage(85.0f);
     this->description->setWidthPercentage(96.0f);
     this->description->setContentView(descriptionSecondContainer);
     descriptionSecondContainer->addView(descriptionLbl);
     this->description->setFocusable(false);
     this->description->setBorderThickness(4.0f);
-    this->description->setBorderColor(MCDBorderColor);
+    if (this->supported) {
+        this->description->setBorderColor(MCDBorderColor);
+    } else {
+        this->description->setBorderColor(MCDRed);
+    }
 
     this->addView(this->description);
 
-    this->downloadModBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
-    this->downloadModBtn->setMinWidth(this->downloadModBtn->getWidth());
-    this->downloadsButtons->addView(this->downloadModBtn);
-    this->clearModBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
+    if (this->supported) {
+        this->downloadModBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
+        this->downloadModBtn->setMinWidth(this->downloadModBtn->getWidth());
+        this->downloadsButtons->addView(this->downloadModBtn);
+        this->clearModBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
+        this->downloadsButtons->addView(this->clearModBtn);
+        this->clearModBtn->setWidth(120);
+    }
     this->clearScreenshotsBtn->setMargins(10.0f, 50.0f, 10.0f, 10.0f);
-    this->downloadsButtons->addView(this->clearModBtn);
-    this->clearModBtn->setWidth(120);
     this->clearScreenshotsBtn->setWidth(120);
     this->screenshotsButtons->addView(this->screenshotsBtn);
     this->screenshotsButtons->addView(this->clearScreenshotsBtn);
     this->buttons->addView(this->screenshotsButtons);
-    this->buttons->addView(this->downloadsButtons);
 
-    this->installBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
-    this->installBtn->setWidth(140);
-    this->modButtons->addView(this->installBtn);
-    this->uninstallBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
-    this->uninstallBtn->setWidth(140);
-    this->modButtons->addView(this->uninstallBtn);
-    this->modButtons->setMargins(0.0f, 0.0f, 0.0f, 50.0f);
-    this->buttons->addView(this->modButtons);
+    if (this->supported) {
+        this->buttons->addView(this->downloadsButtons);
+        this->installBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
+        this->installBtn->setWidth(140);
+        this->modButtons->addView(this->installBtn);
+        this->uninstallBtn->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
+        this->uninstallBtn->setWidth(140);
+        this->modButtons->addView(this->uninstallBtn);
+        this->modButtons->setMargins(0.0f, 0.0f, 0.0f, 50.0f);
+        this->buttons->addView(this->modButtons);
+    }
 
     this->setAlignItems(brls::AlignItems::CENTER);
     this->setJustifyContent(brls::JustifyContent::FLEX_END);
@@ -519,18 +532,22 @@ ModView::ModView(app::ModCD &aModCD)
     this->buttons->setHeightPercentage(10.0f);
     this->buttons->setMargins(10.0f, 10.0f, 10.0f, 10.0f);
     this->buttons->setBorderThickness(4.0f);
-    this->buttons->setBorderColor(MCDBorderColor);
+    if (this->supported) {
+        this->buttons->setBorderColor(MCDBorderColor);
+    } else {
+        this->buttons->setBorderColor(MCDRed);
+    }
     this->buttons->setWidthPercentage(96.0f);
     this->buttons->setJustifyContent(brls::JustifyContent::CENTER);
     this->addView(this->buttons);
 
     this->toast = std::make_unique<ToastView>(this, brls::Point(1280.0f / 2, round(720.0f - (720.0f / 3 / 2)) - 40.0f));
 
-    this->clearModBtn->registerClickAction([this](brls::View *view) { return clearModAction(); });
-    this->clearScreenshotsBtn->registerClickAction([this](brls::View *view) { return clearScreenshotsAction(); });
-    this->installBtn->registerClickAction([this](brls::View *view) { return installAction(); });
-    this->uninstallBtn->registerClickAction([this](brls::View *view) { return uninstallAction(); });
-    this->registerAction("", brls::ControllerButton::BUTTON_X, [this](brls::View *) { return xAction(); });
+    this->clearModBtn->registerClickAction([this](brls::View* view) { return clearModAction(); });
+    this->clearScreenshotsBtn->registerClickAction([this](brls::View* view) { return clearScreenshotsAction(); });
+    this->installBtn->registerClickAction([this](brls::View* view) { return installAction(); });
+    this->uninstallBtn->registerClickAction([this](brls::View* view) { return uninstallAction(); });
+    this->registerAction("", brls::ControllerButton::BUTTON_X, [this](brls::View*) { return xAction(); });
 
     this->updateButtonsByFlags();
 }
@@ -541,7 +558,7 @@ ModView::~ModView() {
         utils::removeAndEmpty(this->modCD.getDescriptionPath());
         utils::removeAndEmpty(this->modCD.getMergedInfoPath());
         if (!this->modCD.isOnlineMode()) {
-            brls::Dialog *offlineDialog =
+            brls::Dialog* offlineDialog =
                 new brls::Dialog(utils::Localization::get("ModView.OfflineDialog.ApplicationNeedsToBeRestarted"));
             offlineDialog->addButton("OK", []() { brls::Application::quit(); });
             offlineDialog->setCancelable(false);
@@ -619,12 +636,12 @@ void ModView::updateButtonsByFlags() {
     }
 }
 
-void ModView::draw(NVGcontext *vg, float x, float y, float width, float height, brls::Style style,
-                   brls::FrameContext *ctx) {
+void ModView::draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style,
+                   brls::FrameContext* ctx) {
     const std::string stopPrefix = "■ ";
 
-    utils::DownloadState *targetState = nullptr;
-    brls::Button *targetButton = nullptr;
+    utils::DownloadState* targetState = nullptr;
+    brls::Button* targetButton = nullptr;
     if (this->flags.areFlagsSet(Flags::MOD_DOWNLOADING_IN_PROGRESS)) {
         targetState = &this->dsMod;
         targetButton = this->downloadModBtn;

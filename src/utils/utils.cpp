@@ -16,7 +16,7 @@ constexpr size_t BUFFERS_SIZE = 1024 * 1024 * 10;
 }
 namespace utils {
 
-bool createDirectory(const std::filesystem::path &path) {
+bool createDirectory(const std::filesystem::path& path) {
     MODCD_LOG_DEBUG("[{}]: start - path: {}", __PRETTY_FUNCTION__, path);
 
     bool res = fslib::createDirectoriesRecursively(path);
@@ -31,8 +31,8 @@ bool createDirectory(const std::filesystem::path &path) {
     return res;
 }
 
-bool unzipFile(const std::filesystem::path &workingDirectory, const std::filesystem::path &archPath,
-               const std::filesystem::path &destDir) {
+bool unzipFile(const std::filesystem::path& workingDirectory, const std::filesystem::path& archPath,
+               const std::filesystem::path& destDir) {
     MODCD_LOG_DEBUG("[{}]: start - wd: {} | archPath: {} | dstDir: {}", __PRETTY_FUNCTION__, workingDirectory, archPath,
                     destDir);
 
@@ -48,7 +48,7 @@ bool unzipFile(const std::filesystem::path &workingDirectory, const std::filesys
         return false;
     }
 
-    const auto &zipFilePtr = zipFile.get();
+    const auto& zipFilePtr = zipFile.get();
     if (unzGoToFirstFile(zipFilePtr) != UNZ_OK) {
         MODCD_LOG_ERROR("[{}]: Failed to go to the first file in zip archive: {}", __PRETTY_FUNCTION__, archPath);
         return false;
@@ -108,8 +108,8 @@ bool unzipFile(const std::filesystem::path &workingDirectory, const std::filesys
     return true;
 }
 
-std::list<std::filesystem::path> listFilesInZip(const std::filesystem::path &workingDirectory,
-                                                const std::filesystem::path &archPath) {
+std::list<std::filesystem::path> listFilesInZip(const std::filesystem::path& workingDirectory,
+                                                const std::filesystem::path& archPath) {
     std::list<std::filesystem::path> fileList;
 
     ZipFilePtr zipFile(unzOpen((workingDirectory / archPath).c_str()), unzClose);
@@ -118,7 +118,7 @@ std::list<std::filesystem::path> listFilesInZip(const std::filesystem::path &wor
         return fileList;
     }
 
-    const auto &zipFilePtr = zipFile.get();
+    const auto& zipFilePtr = zipFile.get();
     if (unzGoToFirstFile(zipFilePtr) != UNZ_OK) {
         MODCD_LOG_DEBUG("[{}]: Failed to go to first file in the zip archive.", __PRETTY_FUNCTION__);
         return fileList;
@@ -139,9 +139,9 @@ std::list<std::filesystem::path> listFilesInZip(const std::filesystem::path &wor
     return fileList;
 }
 
-bool exists(const std::filesystem::path &path) { return std::filesystem::exists(path); }
+bool exists(const std::filesystem::path& path) { return std::filesystem::exists(path); }
 
-bool isFile(const std::filesystem::path &path) {
+bool isFile(const std::filesystem::path& path) {
     if (fslib::fileExists(path)) {
         return true;
     }
@@ -151,7 +151,7 @@ bool isFile(const std::filesystem::path &path) {
     throw std::runtime_error("FS Object doesn't exist: " + path.string());
 }
 
-bool remove(const std::filesystem::path &path) {
+bool remove(const std::filesystem::path& path) {
     MODCD_LOG_DEBUG("[{}]: start - path: {}", __PRETTY_FUNCTION__, path);
     if (utils::exists(path)) {
         if (isFile(path)) {
@@ -170,7 +170,7 @@ bool remove(const std::filesystem::path &path) {
     return true;
 }
 
-bool isDirectoryEmpty(const std::filesystem::path &dirpath) {
+bool isDirectoryEmpty(const std::filesystem::path& dirpath) {
     fslib::Directory dir(dirpath);
 
     if (!dir.isOpen()) {
@@ -179,7 +179,7 @@ bool isDirectoryEmpty(const std::filesystem::path &dirpath) {
     }
 
     for (int i = 0; i < dir.getCount(); ++i) {
-        const char *entryName = dir[i];
+        const char* entryName = dir[i];
         if (entryName && (strcmp(entryName, ".") != 0) && (strcmp(entryName, "..") != 0)) {
             return false;
         }
@@ -188,7 +188,7 @@ bool isDirectoryEmpty(const std::filesystem::path &dirpath) {
     return true;
 }
 
-bool removeAndEmpty(const std::filesystem::path &path) {
+bool removeAndEmpty(const std::filesystem::path& path) {
     MODCD_LOG_DEBUG("[{}]: start - path: {}", __PRETTY_FUNCTION__, path);
 
     if (utils::exists(path)) {
@@ -212,7 +212,7 @@ bool removeAndEmpty(const std::filesystem::path &path) {
     return true;
 }
 
-bool copy(const std::filesystem::path &source, const std::filesystem::path &destination) {
+bool copy(const std::filesystem::path& source, const std::filesystem::path& destination) {
     MODCD_LOG_DEBUG("[{}]: start - src: {} | dst: {}", __PRETTY_FUNCTION__, source, destination);
 
     std::vector<std::pair<std::filesystem::path, std::filesystem::path>> stack;
@@ -241,7 +241,7 @@ bool copy(const std::filesystem::path &source, const std::filesystem::path &dest
             }
 
             for (int i = 0; i < dir.getCount(); ++i) {
-                const char *entryName = dir[i];
+                const char* entryName = dir[i];
                 if (entryName != nullptr && strcmp(entryName, ".") != 0 && strcmp(entryName, "..") != 0) {
                     stack.emplace_back(src / entryName, dst / entryName);
                 }
@@ -276,7 +276,7 @@ bool copy(const std::filesystem::path &source, const std::filesystem::path &dest
     return true;
 }
 
-bool move(const std::filesystem::path &source, const std::filesystem::path &destination) {
+bool move(const std::filesystem::path& source, const std::filesystem::path& destination) {
     MODCD_LOG_DEBUG("[{}]: start - src: {} | dst: {}", __PRETTY_FUNCTION__, source, destination);
     if (!utils::exists(source)) {
         return false;
@@ -297,7 +297,7 @@ bool move(const std::filesystem::path &source, const std::filesystem::path &dest
     return true;
 }
 
-std::string readFile(const std::filesystem::path &filePath) {
+std::string readFile(const std::filesystem::path& filePath) {
     MODCD_LOG_DEBUG("[{}]: start - path: {}", __PRETTY_FUNCTION__, filePath);
 
     fslib::File file(filePath, FsOpenMode_Read);
@@ -326,7 +326,7 @@ std::string readFile(const std::filesystem::path &filePath) {
     return content;
 }
 
-std::string readFileOldWay(const std::filesystem::path &filePath) {
+std::string readFileOldWay(const std::filesystem::path& filePath) {
     MODCD_LOG_DEBUG("[{}]: start - path: {}", __PRETTY_FUNCTION__, filePath);
     std::ifstream file(filePath, std::ios::in | std::ios::binary);
 
@@ -343,7 +343,7 @@ std::string readFileOldWay(const std::filesystem::path &filePath) {
     return content;
 }
 
-std::string getFileNameFromUrl(const std::string &url) {
+std::string getFileNameFromUrl(const std::string& url) {
     size_t lastSlashPos = url.rfind('/');
 
     if (lastSlashPos != std::string::npos) {
@@ -380,7 +380,7 @@ std::string convertToUnit(size_t size) {
     return stream.str();
 }
 
-void trimLabelText(const std::string &currentText, brls::Label *lbl, size_t maxPixelWidth) {
+void trimLabelText(const std::string& currentText, brls::Label* lbl, size_t maxPixelWidth) {
     lbl->setText(currentText);
     std::wstring wcurrentText = to_wstring(currentText);
     if (lbl->getWidth() <= maxPixelWidth) {
@@ -407,12 +407,12 @@ void trimLabelText(const std::string &currentText, brls::Label *lbl, size_t maxP
     } while (lbl->getWidth() > maxPixelWidth && leftPartLength > 1 && rightPartLength > 1);
 }
 
-std::wstring to_wstring(const std::string &str) {
+std::wstring to_wstring(const std::string& str) {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     return converter.from_bytes(str);
 }
 
-std::string to_string(const std::wstring &wstr) {
+std::string to_string(const std::wstring& wstr) {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
     return converter.to_bytes(wstr);
 }
@@ -426,7 +426,7 @@ bool isConnectedToInternet() {
 
 bool isApplet() { return appletGetAppletType() == AppletType_LibraryApplet; }
 
-bool saveJsonToFile(const std::filesystem::path &filename, const nlohmann::json &j) {
+bool saveJsonToFile(const std::filesystem::path& filename, const nlohmann::json& j) {
     MODCD_LOG_DEBUG("[{}]: start - path: {}", __PRETTY_FUNCTION__, filename);
     try {
         fslib::File file(filename, FsOpenMode_Write | FsOpenMode_Create);
@@ -448,17 +448,17 @@ bool saveJsonToFile(const std::filesystem::path &filename, const nlohmann::json 
         file.flush();
         MODCD_LOG_DEBUG("[{}]: end - path: {}", __PRETTY_FUNCTION__, filename);
         return true;
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         MODCD_LOG_ERROR("[{}]: Exception caught - path: {} | error: {}", __PRETTY_FUNCTION__, filename, e.what());
         return false;
     }
 }
 
-bool startsWith(const std::string &string, std::string_view stringBegin) noexcept {
+bool startsWith(const std::string& string, std::string_view stringBegin) noexcept {
     return string.rfind(stringBegin, 0) == 0;
 }
 
-std::pair<std::string, std::string> splitOnTwo(const std::string &str) {
+std::pair<std::string, std::string> splitOnTwo(const std::string& str) {
     std::size_t pos = str.find(modcd_constants::DELIMITER);
 
     if (pos == std::string::npos) {

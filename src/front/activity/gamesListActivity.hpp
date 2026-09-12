@@ -7,14 +7,14 @@
 namespace front {
 class GamesListActivity : public brls::Activity {
    private:
-    app::ModCD &modCD;
-    GamesListView *gamesListView;
+    app::ModCD& modCD;
+    GamesListView* gamesListView;
 
    public:
-    GamesListActivity(app::ModCD &aModCD) noexcept;
+    GamesListActivity(app::ModCD& aModCD) noexcept;
 
     ~GamesListActivity();
 
-    brls::View *createContentView() override;
+    brls::View* createContentView() override;
 };
 }  // namespace front

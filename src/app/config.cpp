@@ -4,7 +4,7 @@
 
 namespace app {
 
-Config::Config(const std::string &aRepositoryUrl, bool aLogging, std::string aLoggingMode) noexcept
+Config::Config(const std::string& aRepositoryUrl, bool aLogging, std::string aLoggingMode) noexcept
     : repositoryUrl(aRepositoryUrl), logging(aLogging), loggingMode(aLoggingMode) {}
 
 nlohmann::json Config::toJson() const {
@@ -12,7 +12,7 @@ nlohmann::json Config::toJson() const {
         {"repositoryUrl", this->repositoryUrl}, {"logging", this->logging}, {"loggingMode", this->loggingMode}};
 }
 
-Config Config::fromJson(const std::string &jsonString) {
+Config Config::fromJson(const std::string& jsonString) {
     nlohmann::json j = nlohmann::json::parse(jsonString);
 
     std::string repoUrl = j.at("repositoryUrl").get<std::string>();

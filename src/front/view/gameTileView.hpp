@@ -7,6 +7,8 @@ namespace front {
 class GameTileView : public brls::Button {
    public:
     const core::Game& game;
-    GameTileView(const core::Game& aGame);
+    const bool supported;
+    const bool noMods;
+    GameTileView(const core::Game& aGame, const bool aSupported, const bool aNoMods);
 };
 }  // namespace front

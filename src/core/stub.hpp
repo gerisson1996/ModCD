@@ -13,9 +13,9 @@ class GameStub {
     const uint64_t version;
 
    public:
-    GameStub(std::string &&aTitleId, uint64_t aVersion) noexcept;
+    GameStub(std::string&& aTitleId, uint64_t aVersion) noexcept;
     Game toGame() const;
-    static GameStub fromJson(const nlohmann::json &j);
+    static GameStub fromJson(const nlohmann::json& j);
 };
 
 class Stub {
@@ -23,7 +23,7 @@ class Stub {
     std::list<GameStub> games;
 
    public:
-    static Stub fromJson(const nlohmann::json &j);
+    static Stub fromJson(const nlohmann::json& j);
 };
 
 }  // namespace core

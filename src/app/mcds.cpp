@@ -9,11 +9,11 @@
 
 namespace app {
 
-void MCDS::setWorkingDirectory(std::filesystem::path &&aWorkingDirectory) noexcept {
+void MCDS::setWorkingDirectory(std::filesystem::path&& aWorkingDirectory) noexcept {
     this->workingDirectory = std::move(aWorkingDirectory);
 }
 
-std::filesystem::path MCDS::getRelativePath(const std::filesystem::path &path) const {
+std::filesystem::path MCDS::getRelativePath(const std::filesystem::path& path) const {
     if (path.is_absolute()) {
         return path;
     } else {
@@ -21,7 +21,7 @@ std::filesystem::path MCDS::getRelativePath(const std::filesystem::path &path) c
     }
 }
 
-void MCDS::executeRule(const std::string &rule) const {
+void MCDS::executeRule(const std::string& rule) const {
     MODCD_LOG_DEBUG("[{}]: start rule execution - {}", __PRETTY_FUNCTION__, rule);
     const std::filesystem::path filePath = this->workingDirectory / rulesFileName;
     std::ifstream file(filePath);
@@ -53,7 +53,7 @@ void MCDS::executeRule(const std::string &rule) const {
     return;
 }
 
-void MCDS::executeCommand(const std::string &line) const {
+void MCDS::executeCommand(const std::string& line) const {
     MODCD_LOG_DEBUG("[{}]: line - {}", __PRETTY_FUNCTION__, line);
     std::istringstream iss(line);
     std::string command;
@@ -74,7 +74,7 @@ void MCDS::executeCommand(const std::string &line) const {
     }
 }
 
-std::list<std::filesystem::path> MCDS::getLastArgs(const std::string &rule) const {
+std::list<std::filesystem::path> MCDS::getLastArgs(const std::string& rule) const {
     std::list<std::filesystem::path> lastArgs;
     const std::filesystem::path filePath = this->workingDirectory / rulesFileName;
     std::ifstream file(filePath);
@@ -113,7 +113,7 @@ std::list<std::filesystem::path> MCDS::getLastArgs(const std::string &rule) cons
 
 bool MCDS::isModInstalledByUninstallPaths() const {
     std::list args = this->getLastArgs("uninstall");
-    for (const std::filesystem::path &arg : args) {
+    for (const std::filesystem::path& arg : args) {
         if (!utils::exists(arg)) {
             return false;
         }
@@ -121,50 +121,50 @@ bool MCDS::isModInstalledByUninstallPaths() const {
     return true;
 }
 
-bool MCDS::unzip(const std::vector<std::filesystem::path> &params) const {
+bool MCDS::unzip(const std::vector<std::filesystem::path>& params) const {
     if (params.size() != 2) {
         return false;
     }
-    const std::filesystem::path &archPath = params[0];
+    const std::filesystem::path& archPath = params[0];
     const std::filesystem::path dst = this->getRelativePath(params[1]);
     MODCD_LOG_DEBUG("[{}]: archPath: {} | dst: {}", __PRETTY_FUNCTION__, archPath, dst);
     return utils::unzipFile(this->workingDirectory, archPath, dst);
 }
 
-bool MCDS::srm(const std::vector<std::filesystem::path> &params) const {
+bool MCDS::srm(const std::vector<std::filesystem::path>& params) const {
     if (params.size() != 1) {
         return false;
     }
-    const std::filesystem::path &path = params[0];
+    const std::filesystem::path& path = params[0];
     MODCD_LOG_DEBUG("[{}]: path: {}", __PRETTY_FUNCTION__, path);
     return utils::remove(this->getRelativePath(path));
 }
 
-bool MCDS::rm(const std::vector<std::filesystem::path> &params) const {
+bool MCDS::rm(const std::vector<std::filesystem::path>& params) const {
     if (params.size() != 1) {
         return false;
     }
-    const std::filesystem::path &path = params[0];
+    const std::filesystem::path& path = params[0];
     MODCD_LOG_DEBUG("[{}]: path: {}", __PRETTY_FUNCTION__, path);
     return utils::removeAndEmpty(this->getRelativePath(path));
 }
 
-bool MCDS::cp(const std::vector<std::filesystem::path> &params) const {
+bool MCDS::cp(const std::vector<std::filesystem::path>& params) const {
     if (params.size() != 2) {
         return false;
     }
-    const std::filesystem::path &src = params[0];
-    const std::filesystem::path &dst = params[1];
+    const std::filesystem::path& src = params[0];
+    const std::filesystem::path& dst = params[1];
     MODCD_LOG_DEBUG("[{}]: src: {} | dst: {}", __PRETTY_FUNCTION__, src, dst);
     return utils::copy(this->getRelativePath(src), this->getRelativePath(dst));
 }
 
-bool MCDS::mv(const std::vector<std::filesystem::path> &params) const {
+bool MCDS::mv(const std::vector<std::filesystem::path>& params) const {
     if (params.size() != 2) {
         return false;
     }
-    const std::filesystem::path &src = params[0];
-    const std::filesystem::path &dst = params[1];
+    const std::filesystem::path& src = params[0];
+    const std::filesystem::path& dst = params[1];
     MODCD_LOG_DEBUG("[{}]: src: {} | dst: {}", __PRETTY_FUNCTION__, src, dst);
     return utils::move(this->getRelativePath(src), this->getRelativePath(dst));
 }

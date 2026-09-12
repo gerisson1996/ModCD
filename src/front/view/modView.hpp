@@ -23,26 +23,27 @@ enum Flags : uint32_t {
 
 class ModView : public brls::Box {
    private:
-    app::ModCD &modCD;
+    app::ModCD& modCD;
+    bool supported;
     utils::DownloadState dsMod;
     utils::DownloadState dsScreenshots;
 
-    brls::InputManager *input;
+    brls::InputManager* input;
 
-    brls::ScrollingFrame *description;
-    brls::Box *buttons;
-    brls::Box *screenshotsButtons;
-    brls::Box *downloadsButtons;
-    brls::Box *modButtons;
+    brls::ScrollingFrame* description;
+    brls::Box* buttons;
+    brls::Box* screenshotsButtons;
+    brls::Box* downloadsButtons;
+    brls::Box* modButtons;
 
-    brls::Button *screenshotsBtn;
-    brls::Button *clearScreenshotsBtn;
+    brls::Button* screenshotsBtn;
+    brls::Button* clearScreenshotsBtn;
 
-    brls::Button *downloadModBtn;
-    brls::Button *clearModBtn;
+    brls::Button* downloadModBtn;
+    brls::Button* clearModBtn;
 
-    brls::Button *installBtn;
-    brls::Button *uninstallBtn;
+    brls::Button* installBtn;
+    brls::Button* uninstallBtn;
 
     std::unique_ptr<ToastView> toast;
 
@@ -66,8 +67,8 @@ class ModView : public brls::Box {
    private:
     void prepareOnline();
     void prepareOffline();
-    void draw(NVGcontext *vg, float x, float y, float width, float height, brls::Style style,
-              brls::FrameContext *ctx) override;
+    void draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style,
+              brls::FrameContext* ctx) override;
     void setAllButtonsState(brls::ButtonState state);
     void updateButtonsByContent();
     void updateButtonsByFlags();
@@ -100,14 +101,14 @@ class ModView : public brls::Box {
     utils::DownloadingResult checkScreenshotsArchive();
     void setScreenshotsDownloadingState();
 
-    void setFSOState(brls::Button *button, const std::string &buttonText);
-    void unsetFSOState(brls::Button *button, const std::string &buttonText);
+    void setFSOState(brls::Button* button, const std::string& buttonText);
+    void unsetFSOState(brls::Button* button, const std::string& buttonText);
 
     void setFlagsAndUpdateButtons(uint32_t flagsToSet);
     void clearFlagsAndUpdateButtons(uint32_t flagsToClear);
 
    public:
-    ModView(app::ModCD &aModCD);
+    ModView(app::ModCD& aModCD, bool aSupported);
     ~ModView();
     void stopAll();
     utils::FlagManager flags;

@@ -16,12 +16,12 @@ class ModEntry {
     std::string sha256;
 
    public:
-    ModEntry(std::string &&aLastUpdated, uint64_t aGameVersion, std::string &&aMod, std::string &&aMcds,
-             std::string &&aDescription, std::string &&aScreenshots, std::string &&aSha256) noexcept;
+    ModEntry(std::string&& aLastUpdated, uint64_t aGameVersion, std::string&& aMod, std::string&& aMcds,
+             std::string&& aDescription, std::string&& aScreenshots, std::string&& aSha256) noexcept;
 
     ModEntry() noexcept = default;
 
-    static ModEntry fromJson(const nlohmann::json &j);
+    static ModEntry fromJson(const nlohmann::json& j);
 };
 
 class Mod {
@@ -30,8 +30,8 @@ class Mod {
     const std::vector<ModEntry> files;
 
    public:
-    Mod(std::string &&aLastUpdated, std::vector<ModEntry> &&aFiles) noexcept;
+    Mod(std::string&& aLastUpdated, std::vector<ModEntry>&& aFiles) noexcept;
 
-    static Mod fromJson(const nlohmann::json &j);
+    static Mod fromJson(const nlohmann::json& j);
 };
 }  // namespace core

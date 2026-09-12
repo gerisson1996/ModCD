@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <set>
 #include <string>
 
 constexpr std::size_t GAME_ICON_SIZE = 0x20000;
@@ -15,9 +16,17 @@ class Game {
     const uint64_t version;
 
    public:
-    Game(std::string &&aName, const uint64_t aTitleId, uint8_t aIcon[GAME_ICON_SIZE], const uint64_t aVersion) noexcept;
+    Game(std::string&& aName, const uint64_t aTitleId, uint8_t aIcon[GAME_ICON_SIZE], const uint64_t aVersion) noexcept;
 
     std::string titleIDToString() const noexcept;
+};
+
+class UnsupportedGame {
+   private:
+   public:
+    UnsupportedGame(Game&& aGame, std::set<uint64_t>&& aModVersions) noexcept;
+    std::set<uint64_t> modVersions;
+    Game game;
 };
 
 }  // namespace core

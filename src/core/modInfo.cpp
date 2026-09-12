@@ -3,8 +3,8 @@
 #include <nlohmann/json.hpp>
 
 namespace core {
-ModInfo::ModInfo(std::string &&aName, std::string &&aDescription, std::string &&aType, std::string &&aAuthor,
-                 std::string &&aUrl, std::vector<uint64_t> &&aSupportedVersions) noexcept
+ModInfo::ModInfo(std::string&& aName, std::string&& aDescription, std::string&& aType, std::string&& aAuthor,
+                 std::string&& aUrl, std::vector<uint64_t>&& aSupportedVersions) noexcept
     : name(std::move(aName)),
       description(std::move(aDescription)),
       type(std::move(aType)),
@@ -12,9 +12,9 @@ ModInfo::ModInfo(std::string &&aName, std::string &&aDescription, std::string &&
       url(std::move(aUrl)),
       supportedVersions(std::move(aSupportedVersions)) {}
 
-ModInfo::ModInfo(const std::string &aName, const std::string &aDescription, const std::string &aType,
-                 const std::string &aAuthor, const std::string &aUrl,
-                 const std::vector<uint64_t> &aSupportedVersions) noexcept
+ModInfo::ModInfo(const std::string& aName, const std::string& aDescription, const std::string& aType,
+                 const std::string& aAuthor, const std::string& aUrl,
+                 const std::vector<uint64_t>& aSupportedVersions) noexcept
     : name(aName),
       description(aDescription),
       type(aType),
@@ -22,7 +22,7 @@ ModInfo::ModInfo(const std::string &aName, const std::string &aDescription, cons
       url(aUrl),
       supportedVersions(aSupportedVersions) {}
 
-ModInfo ModInfo::fromJson(const nlohmann::json &j) {
+ModInfo ModInfo::fromJson(const nlohmann::json& j) {
     std::string name = j.value("name", "");
     std::string description = j.value("description", "");
     std::string type = j.value("type", "");

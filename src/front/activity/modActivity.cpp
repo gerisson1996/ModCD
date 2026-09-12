@@ -5,20 +5,20 @@
 
 namespace front {
 
-ModActivity::ModActivity(app::ModCD &aModCD, IUpdatable *parentUpdatable) noexcept
+ModActivity::ModActivity(app::ModCD& aModCD, bool aSupported, IUpdatable* parentUpdatable) noexcept
     : modCD(aModCD), parentUpdatable(parentUpdatable) {
-    this->modView = new ModView(this->modCD);
+    this->modView = new ModView(this->modCD, aSupported);
     MODCD_LOG_DEBUG("[{}]: created", __PRETTY_FUNCTION__);
 }
 
 ModActivity::~ModActivity() { MODCD_LOG_DEBUG("[{}]: deleted", __PRETTY_FUNCTION__); }
 
-brls::View *ModActivity::createContentView() { return this->modView; }
+brls::View* ModActivity::createContentView() { return this->modView; }
 
 void ModActivity::onContentAvailable() {
     this->registerAction(
         "Go to mods", brls::ControllerButton::BUTTON_B,
-        [this](brls::View *view) {
+        [this](brls::View* view) {
             if (this->modView->flags.isAnyFlagSet(Flags::MOD_DOWNLOADING_IN_PROGRESS |
                                                   Flags::SCREENSHOTS_DOWNLOADING_IN_PROGRESS)) {
                 this->modView->stopAll();

@@ -3,7 +3,7 @@
 #include <iomanip>
 
 namespace core {
-Game::Game(std::string &&aName, const uint64_t aTitleId, uint8_t aIcon[GAME_ICON_SIZE],
+Game::Game(std::string&& aName, const uint64_t aTitleId, uint8_t aIcon[GAME_ICON_SIZE],
            const uint64_t aVersion) noexcept
     : name(std::move(aName)), titleId(aTitleId), version(aVersion) {
     if (aIcon) {
@@ -18,4 +18,6 @@ std::string Game::titleIDToString() const noexcept {
     return oss.str();
 }
 
+UnsupportedGame::UnsupportedGame(Game&& aGame, std::set<uint64_t>&& aModVersions) noexcept
+    : game(std::move(aGame)), modVersions(std::move(aModVersions)) {}
 }  // namespace core

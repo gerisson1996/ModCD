@@ -9,8 +9,8 @@ constexpr int axesMult = 20;
 }
 
 namespace front {
-void BAView::draw(NVGcontext *vg, float x, float y, float width, float height, brls::Style style,
-                  brls::FrameContext *ctx) {
+void BAView::draw(NVGcontext* vg, float x, float y, float width, float height, brls::Style style,
+                  brls::FrameContext* ctx) {
     if (this->scrollable) {
         brls::ControllerState state;
         brls::Application::getPlatform()->getInputManager()->updateUnifiedControllerState(&state);
@@ -27,11 +27,11 @@ void BAView::draw(NVGcontext *vg, float x, float y, float width, float height, b
     brls::Box::draw(vg, x, y, width, height, style, ctx);
 }
 
-brls::View *BAView::getDefaultFocus() { return this->scrollable ? this : nullptr; }
+brls::View* BAView::getDefaultFocus() { return this->scrollable ? this : nullptr; }
 
 void BAView::onFocusGained() {}
 
-BAView::BAView(const std::filesystem::path &beforeImagePath, const std::filesystem::path &afterImagePath,
+BAView::BAView(const std::filesystem::path& beforeImagePath, const std::filesystem::path& afterImagePath,
                float aMaxWidth, float aMaxHeight, bool aScrollable)
     : brls::Box(brls::Axis::ROW), maxWidth(aMaxWidth), maxHeight(aMaxHeight), scrollable(aScrollable) {
     constexpr float lineThick = 2.0f;
@@ -54,7 +54,7 @@ BAView::BAView(const std::filesystem::path &beforeImagePath, const std::filesyst
 
     if (scrollable) {
         this->addGestureRecognizer(new brls::ScrollGestureRecognizer(
-            [this](brls::PanGestureStatus status, brls::Sound *sound) {
+            [this](brls::PanGestureStatus status, brls::Sound* sound) {
                 if (status.state == brls::GestureState::START || status.state == brls::GestureState::STAY ||
                     status.state == brls::GestureState::END) {
                     this->resizeImages(status.delta.x);

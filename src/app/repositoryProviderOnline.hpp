@@ -8,16 +8,16 @@ namespace app {
 
 class RepositoryAccessException : public std::exception {
    public:
-    const char *what() const noexcept override { return "Repository access error"; }
+    const char* what() const noexcept override { return "Repository access error"; }
 };
 
 class RepositoryProviderOnline : public RepositoryProvider {
    private:
-    Config &config;
-    utils::HttpRequester &httpRequester;
+    Config& config;
+    utils::HttpRequester& httpRequester;
 
    public:
-    RepositoryProviderOnline(Config &aConfig, utils::HttpRequester &aHttpRequester) noexcept;
+    RepositoryProviderOnline(Config& aConfig, utils::HttpRequester& aHttpRequester) noexcept;
 
     virtual ~RepositoryProviderOnline() = default;
 

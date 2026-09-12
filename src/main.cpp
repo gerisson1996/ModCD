@@ -3,7 +3,7 @@
 #include <front/app.hpp>
 #include <fslib.hpp>
 
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[]) {
     nsInitialize();
     nifmInitialize(NifmServiceType_User);
     fslib::initialize();

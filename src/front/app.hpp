@@ -8,7 +8,7 @@ class App {
     app::ModCD modCD;
 
    public:
-    App(int argc, char *argv[]);
+    App(int argc, char* argv[]);
     ~App() {}
     void start();
 };

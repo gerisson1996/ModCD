@@ -11,10 +11,11 @@
             "PostfixLineEditText": "{prefix} (X - Search | B - Clear)"
         },
         "Toast": {
-            "FoundedGames": "Supported games were found: {count}",
+            "FoundedGames": "Full supported games were found: {count}",
             "UpdateSuccessful": "The update was successful. Restart the app to use the new version",
             "UpdateError": "An error occurred during the update",
-            "DownloadIsStarting": "The download is starting"
+            "DownloadIsStarting": "The download is starting",
+            "NoModError": "The repository does not contain a mod for this game"
         },
         "OfflineDialog": {
             "Message": "The application is running in offline mode\n\nDownloading screenshots and mods is not available"
@@ -27,13 +28,15 @@
     },
     "GameTileView": {
         "TitleID": "TitleID: {id}",
-        "Version": "Version: {version}"
+        "Version": "Version: {version}",
+        "UnsupportedVersion": "Unsupported ver.: {version}"
     },
     "ModTileView": {
         "Name": "Name: {name}",
         "Type": "Type: {type}",
         "Author": "Author: {author}",
-        "Description": "Description: {description}"
+        "Description": "Description: {description}",
+        "SupportedVersions": "Supported game versions: {supportedVersions}"
     },
     "ModView": {
         "CommonButton": {

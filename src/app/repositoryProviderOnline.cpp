@@ -4,7 +4,7 @@
 #include <utils/utils.hpp>
 
 namespace app {
-RepositoryProviderOnline::RepositoryProviderOnline(Config &aConfig, utils::HttpRequester &aHttpRequester) noexcept
+RepositoryProviderOnline::RepositoryProviderOnline(Config& aConfig, utils::HttpRequester& aHttpRequester) noexcept
     : config(aConfig), httpRequester(aHttpRequester) {}
 
 std::unique_ptr<core::Repository> RepositoryProviderOnline::getRepository() {
@@ -14,7 +14,7 @@ std::unique_ptr<core::Repository> RepositoryProviderOnline::getRepository() {
         MODCD_LOG_DEBUG("[{}]: the repository has been received - url: {}", __PRETTY_FUNCTION__,
                         this->config.repositoryUrl);
         return core::Repository::fromJson(nlohmann::json::parse(repositoryJSON));
-    } catch (const utils::CURLException &curlException) {
+    } catch (const utils::CURLException& curlException) {
         throw RepositoryAccessException();
     }
 }

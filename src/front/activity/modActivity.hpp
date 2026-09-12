@@ -8,16 +8,16 @@
 namespace front {
 class ModActivity : public brls::Activity {
    private:
-    ModView *modView;
-    IUpdatable *parentUpdatable;
-    app::ModCD &modCD;
+    ModView* modView;
+    IUpdatable* parentUpdatable;
+    app::ModCD& modCD;
 
    public:
-    ModActivity(app::ModCD &aModCD, IUpdatable *parentUpdatable) noexcept;
+    ModActivity(app::ModCD& aModCD, bool aSupported, IUpdatable* parentUpdatable) noexcept;
 
     ~ModActivity();
 
-    brls::View *createContentView() override;
+    brls::View* createContentView() override;
     void onContentAvailable() override;
 };
 }  // namespace front

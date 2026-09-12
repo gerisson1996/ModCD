@@ -28,7 +28,7 @@ const std::filesystem::path logPath = modcdDirectory / "log.txt";
 
 namespace app {
 
-ModCD::ModCD(int aArgc, char *aArgv[])
+ModCD::ModCD(int aArgc, char* aArgv[])
     : argc(aArgc),
       args(aArgv),
       config("http://thub.ddns.net:1785/repository.json", true, "w+"),
@@ -70,25 +70,33 @@ void ModCD::init() {
     this->repository = this->repositoryProvider->getRepository();
     std::list<core::Game> games = utils::exists(stubPath) ? this->getGamesFromStub() : this->getInstalledGames();
 
-    for (core::Game &game : games) {
+    for (core::Game& game : games) {
         core::RepContent contents = this->getRepContentByTitleId(game.titleIDToString());
-        if (contents.titleId == "not found") {
-            continue;
-        }
         bool isGameSupported = false;
-        for (const core::ModInfo &modInfo : contents.mods) {
-            for (uint64_t version : modInfo.supportedVersions) {
-                if (version == game.version) {
-                    auto [it, is_inserted] = this->supportedMods.try_emplace(game.titleId, std::list<core::ModInfo>());
-                    it->second.push_back(modInfo);
-                    isGameSupported = true;
-                    break;
+        std::set<uint64_t> modVersions;
+        for (const core::ModInfo& modInfo : contents.mods) {
+            const bool supportsCurrentVersion =
+                std::find(modInfo.supportedVersions.begin(), modInfo.supportedVersions.end(), game.version) !=
+                modInfo.supportedVersions.end();
+
+            if (supportsCurrentVersion) {
+                this->supportedMods[game.titleId].push_back(modInfo);
+                isGameSupported = true;
+            } else {
+                this->unsupportedMods[game.titleId].push_back(modInfo);
+                for (uint64_t version : modInfo.supportedVersions) {
+                    modVersions.insert(version);
                 }
             }
         }
         MODCD_LOG_DEBUG("Game reached {}", contents.titleId);
         if (isGameSupported) {
             this->supportedGames.push_back(std::move(game));
+        } else {
+            this->unsupportedGames.push_back(std::move(core::UnsupportedGame{std::move(game), std::move(modVersions)}));
+            this->unsupportedGames.sort([](const core::UnsupportedGame& a, const core::UnsupportedGame& b) {
+                return !a.modVersions.empty() && b.modVersions.empty();
+            });
         }
     }
     MODCD_LOG_DEBUG("INITED SUCCESS");
@@ -107,12 +115,12 @@ std::list<core::Game> ModCD::getGamesFromStub() {
     try {
         nlohmann::json jsonData = nlohmann::json::parse(utils::readFile(stubPath));
         auto stub = core::Stub::fromJson(jsonData);
-        for (const auto &gameStub : stub.games) {
+        for (const auto& gameStub : stub.games) {
             MODCD_LOG_DEBUG("[{}]: stub game - titleId: {} | version: {}", __PRETTY_FUNCTION__, gameStub.titleId,
                             gameStub.version);
             games.push_back(gameStub.toGame());
         }
-    } catch (const std::exception &e) {
+    } catch (const std::exception& e) {
         MODCD_LOG_DEBUG("[{}]: Error handled!", __PRETTY_FUNCTION__);
     }
     return games;
@@ -135,7 +143,7 @@ std::list<core::Game> ModCD::getInstalledGames() {
             u64 appId = nsa.application_id;
             nsGetApplicationControlData(NsApplicationControlSource_Storage, appId, &cdata,
                                         sizeof(NsApplicationControlData), &actual_size);
-            NacpLanguageEntry *langEntry;
+            NacpLanguageEntry* langEntry;
             nacpGetLanguageEntry(&cdata.nacp, &langEntry);
 
             u64 version = 0;
@@ -154,7 +162,7 @@ std::list<core::Game> ModCD::getInstalledGames() {
                 }
             }
 
-            auto &game = games.emplace_back(!langEntry ? "" : langEntry->name, appId, cdata.icon, version);
+            auto& game = games.emplace_back(!langEntry ? "" : langEntry->name, appId, cdata.icon, version);
             MODCD_LOG_DEBUG(
                 "[{}]: The game was received - name: '{}' | titleId: {} "
                 "| version: {}",
@@ -167,13 +175,13 @@ std::list<core::Game> ModCD::getInstalledGames() {
     return games;
 }
 
-core::RepContent ModCD::getRepContentByTitleId(const std::string &titleId) noexcept {
+core::RepContent ModCD::getRepContentByTitleId(const std::string& titleId) noexcept {
     MODCD_LOG_DEBUG("[{}]: start", __PRETTY_FUNCTION__);
 
-    const std::vector<core::RepContent> &contents = this->repository->contents;
+    const std::vector<core::RepContent>& contents = this->repository->contents;
     auto it = std::find_if(
         contents.begin(), contents.end(),
-        [&titleId = std::as_const(titleId)](const core::RepContent &content) { return content.titleId == titleId; });
+        [&titleId = std::as_const(titleId)](const core::RepContent& content) { return content.titleId == titleId; });
     if (it == contents.end()) {
         MODCD_LOG_DEBUG("[{}]: content by titleId was not found - titleId: {}", __PRETTY_FUNCTION__, titleId);
         return core::RepContent("not found", "not found", {});
@@ -183,7 +191,7 @@ core::RepContent ModCD::getRepContentByTitleId(const std::string &titleId) noexc
     return *it;
 }
 
-core::Mod ModCD::getModByModInfo(const core::ModInfo &modInfo) const noexcept {
+core::Mod ModCD::getModByModInfo(const core::ModInfo& modInfo) const noexcept {
     MODCD_LOG_DEBUG("[{}]: start", __PRETTY_FUNCTION__);
     const std::string modJSON =
         this->httpRequester.getText(utils::HttpRequester::getFullUrl(this->repository->baseUrl, modInfo.url));
@@ -191,7 +199,7 @@ core::Mod ModCD::getModByModInfo(const core::ModInfo &modInfo) const noexcept {
     return core::Mod::fromJson(nlohmann::json::parse(modJSON));
 }
 
-utils::DownloadingResult ModCD::downloadMcds(utils::DownloadState *ds) const {
+utils::DownloadingResult ModCD::downloadMcds(utils::DownloadState* ds) const {
     const auto mcdsPathFile = this->getMcdsPath();
     utils::createDirectory(mcdsPathFile.parent_path());
 
@@ -202,7 +210,7 @@ utils::DownloadingResult ModCD::downloadMcds(utils::DownloadState *ds) const {
     return result;
 }
 
-utils::DownloadingResult ModCD::downloadMod(utils::DownloadState *ds) const {
+utils::DownloadingResult ModCD::downloadMod(utils::DownloadState* ds) const {
     MODCD_LOG_DEBUG("[{}]: start", __PRETTY_FUNCTION__);
     const auto archPathFile = this->getDownloadModPathArchive();
     utils::createDirectory(archPathFile.parent_path());
@@ -214,7 +222,7 @@ utils::DownloadingResult ModCD::downloadMod(utils::DownloadState *ds) const {
     return result;
 }
 
-utils::DownloadingResult ModCD::downloadScreenshots(utils::DownloadState *ds) const {
+utils::DownloadingResult ModCD::downloadScreenshots(utils::DownloadState* ds) const {
     MODCD_LOG_DEBUG("[{}]: start", __PRETTY_FUNCTION__);
     const auto screenshotsArchivePath = this->getSHDownloadArchivePath();
     utils::createDirectory(screenshotsArchivePath.parent_path());
@@ -227,7 +235,7 @@ utils::DownloadingResult ModCD::downloadScreenshots(utils::DownloadState *ds) co
     return result;
 }
 
-long ModCD::getDownloadFileSize(const std::string &url) const {
+long ModCD::getDownloadFileSize(const std::string& url) const {
     return this->httpRequester.getFileSize(utils::HttpRequester::getFullUrl(this->repository->baseUrl, url));
 }
 
@@ -266,7 +274,7 @@ std::list<std::filesystem::path> ModCD::extractScreenshots() const {
 
     std::list<std::filesystem::path> files;
     const std::filesystem::path scArch = downloadPath / screenshotsArchiveName;
-    for (const auto &entry : std::filesystem::directory_iterator(downloadPath)) {
+    for (const auto& entry : std::filesystem::directory_iterator(downloadPath)) {
         if (entry.path() != scArch) {
             files.push_back(entry.path());
         }
@@ -279,7 +287,7 @@ std::list<std::filesystem::path> ModCD::getExtractedScreenshots() const {
     MODCD_LOG_DEBUG("[{}]: start", __PRETTY_FUNCTION__);
     std::list<std::filesystem::path> files =
         utils::listFilesInZip(this->getSHDownloadDirectoryPath(), screenshotsArchiveName);
-    for (const std::filesystem::path &filePath : files) {
+    for (const std::filesystem::path& filePath : files) {
         if (!utils::exists(filePath)) {
             MODCD_LOG_ERROR("[{}]: {} does not exists", __PRETTY_FUNCTION__, filePath);
             return {};
@@ -315,30 +323,30 @@ std::filesystem::path ModCD::getSHDownloadArchivePath() const noexcept {
     return this->getSHDownloadDirectoryPath() / screenshotsArchiveName;
 }
 
-void ModCD::setCurrentModInfo(const core::ModInfo &modInfo) noexcept { this->currentModInfo = modInfo; }
+void ModCD::setCurrentModInfo(const core::ModInfo& modInfo) noexcept { this->currentModInfo = modInfo; }
 
-void ModCD::setCurrentModEntry(const core::ModEntry &modEntry) noexcept { this->currentModEntry = modEntry; }
+void ModCD::setCurrentModEntry(const core::ModEntry& modEntry) noexcept { this->currentModEntry = modEntry; }
 
-void ModCD::setCurrentTitleId(const std::string &titleId) noexcept { this->currentTitleId = titleId; }
+void ModCD::setCurrentTitleId(const std::string& titleId) noexcept { this->currentTitleId = titleId; }
 
 std::filesystem::path ModCD::getModCDDirPath() const noexcept { return modcdDirectory; }
 
-const std::string &ModCD::getMergedInfoName() const noexcept { return mergedInfoName; }
+const std::string& ModCD::getMergedInfoName() const noexcept { return mergedInfoName; }
 
-const core::ModInfo &ModCD::getCurrentModInfo() const noexcept { return this->currentModInfo; }
+const core::ModInfo& ModCD::getCurrentModInfo() const noexcept { return this->currentModInfo; }
 
-const core::ModEntry &ModCD::getCurrentModEntry() const noexcept { return this->currentModEntry; }
+const core::ModEntry& ModCD::getCurrentModEntry() const noexcept { return this->currentModEntry; }
 
 bool ModCD::isOnlineMode() const noexcept { return this->onlineMode; }
 
 void ModCD::setIsOnlineMode(bool onlineMode) noexcept { this->onlineMode = onlineMode; }
 
-const std::string &ModCD::getCurrentTitleId() const noexcept { return this->currentTitleId; }
+const std::string& ModCD::getCurrentTitleId() const noexcept { return this->currentTitleId; }
 
-const Config &ModCD::getConfig() noexcept { return this->config; }
+const Config& ModCD::getConfig() noexcept { return this->config; }
 
-void ModCD::collectMergedInfoFiles(const std::filesystem::path &directoryPath,
-                                   std::list<std::filesystem::path> &result) {
+void ModCD::collectMergedInfoFiles(const std::filesystem::path& directoryPath,
+                                   std::list<std::filesystem::path>& result) {
     fslib::Directory directory(directoryPath);
 
     if (!directory.isOpen()) {
@@ -371,13 +379,13 @@ void ModCD::collectMergedInfoFiles(const std::filesystem::path &directoryPath,
     }
 }
 
-std::list<std::filesystem::path> ModCD::collectMergedInfoFiles(const std::filesystem::path &rootPath) {
+std::list<std::filesystem::path> ModCD::collectMergedInfoFiles(const std::filesystem::path& rootPath) {
     std::list<std::filesystem::path> result;
     collectMergedInfoFiles(rootPath, result);
     return result;
 }
 
-std::list<core::MergedInfo> &ModCD::getMergedInfoObjects() noexcept { return this->mergedInfoObjects; }
+std::list<core::MergedInfo>& ModCD::getMergedInfoObjects() noexcept { return this->mergedInfoObjects; }
 
 void ModCD::updateMergedInfoObjects() {
     MODCD_LOG_DEBUG("[{}]: Called", __PRETTY_FUNCTION__);
@@ -387,7 +395,7 @@ void ModCD::updateMergedInfoObjects() {
     auto files = this->collectMergedInfoFiles(modcdDirectory);
     MODCD_LOG_DEBUG("[{}]: Found {} merged info files", __PRETTY_FUNCTION__, files.size());
 
-    for (const std::string &filePath : files) {
+    for (const std::string& filePath : files) {
         try {
             MODCD_LOG_DEBUG("[{}]: Processing file '{}'", __PRETTY_FUNCTION__, filePath);
 
@@ -399,7 +407,7 @@ void ModCD::updateMergedInfoObjects() {
                             static_cast<int>(mergedInfo.status));
 
             this->mergedInfoObjects.push_back(std::move(mergedInfo));
-        } catch (const std::exception &ex) {
+        } catch (const std::exception& ex) {
             MODCD_LOG_ERROR("[{}]: Error processing file '{}': {}", __PRETTY_FUNCTION__, filePath, ex.what());
         }
     }
@@ -409,8 +417,8 @@ void ModCD::updateMergedInfoObjects() {
 }
 
 void ModCD::saveMergedInfo(core::EnvironmentStatus targetStatus) {
-    const core::ModInfo &modInfo = this->getCurrentModInfo();
-    const core::ModEntry &modEntry = this->getCurrentModEntry();
+    const core::ModInfo& modInfo = this->getCurrentModInfo();
+    const core::ModEntry& modEntry = this->getCurrentModEntry();
 
     const std::filesystem::path mergedInfoPath = this->getMergedInfoPath();
     core::EnvironmentStatus currentStatus = core::EnvironmentStatus::NONE;
@@ -445,18 +453,26 @@ void ModCD::saveMergedInfo(core::EnvironmentStatus targetStatus) {
                 newStatus = core::EnvironmentStatus::MOD_DOWNLOADED;
             }
         } else if (targetStatus == core::EnvironmentStatus::SCREENSHOTS_CLEANED) {
-            if (currentStatus == core::EnvironmentStatus::MOD_DOWNLOADED) {
+            if (this->isMcdsExists() && this->isModDownloaded()) {
                 newStatus = core::EnvironmentStatus::MOD_DOWNLOADED;
+            } else if (this->isScreenshotsDownloaded()) {
+                newStatus = core::EnvironmentStatus::SCREENSHOTS_DOWNLOADED;
             }
         }
     }
+
+    if (newStatus == core::EnvironmentStatus::NONE) {
+        utils::removeAndEmpty(mergedInfoPath);
+        return;
+    }
+
     core::MergedInfo mergedInfo(modInfo.name, modInfo.description, modInfo.type, modInfo.author, modEntry.gameVersion,
                                 this->getCurrentTitleId(), modEntry.sha256, newStatus);
 
-    utils::saveJsonToFile(this->getMergedInfoPath(), mergedInfo.toJson());
+    utils::saveJsonToFile(mergedInfoPath, mergedInfo.toJson());
 }
 
-std::unique_ptr<app::MCDS> &ModCD::getMcds() noexcept { return mcds; }
+std::unique_ptr<app::MCDS>& ModCD::getMcds() noexcept { return mcds; }
 
 void ModCD::setMCDSWorkingDir() noexcept { this->mcds->setWorkingDirectory(this->getDownloadModPathDir()); }
 
