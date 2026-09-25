@@ -409,7 +409,19 @@ void trimLabelText(const std::string& currentText, brls::Label* lbl, size_t maxP
 
 std::wstring to_wstring(const std::string& str) {
     std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> converter;
-    return converter.from_bytes(str);
+    try {
+        return converter.from_bytes(str);
+    } catch (const std::range_error&) {
+        // Some installed titles/homebrew expose malformed or non-UTF-8 names.
+        // Never let one bad title prevent the games screen from loading.
+        MODCD_LOG_ERROR("[{}]: invalid UTF-8 title/name; sanitizing {} bytes", __PRETTY_FUNCTION__, str.size());
+        std::string sanitized;
+        sanitized.reserve(str.size());
+        for (unsigned char ch : str) {
+            sanitized.push_back(ch < 0x80 ? static_cast<char>(ch) : '?');
+        }
+        return converter.from_bytes(sanitized);
+    }
 }
 
 std::string to_string(const std::wstring& wstr) {
