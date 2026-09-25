@@ -25,59 +25,68 @@ GamesListView::GamesListView(app::ModCD& aModCD)
     this->updateDS.alreadyDownloaded = 0;
     this->loadingView = new LoadingView();
     this->addView(this->loadingView);
+    // Heavy initialization performs network and title enumeration. Keep it off the UI thread.
     brls::async([this]() {
+        MODCD_LOG_DEBUG("[GamesListView]: background prepareGames start");
+        const bool prepared = prepareGames();
+        MODCD_LOG_DEBUG("[GamesListView]: background prepareGames end - {}", prepared);
+        if (!prepared) {
+            return;
+        }
+
         brls::sync([this]() {
-            if (prepareGames()) {
-                this->lineEdit = new LineEdit(this->initTextForLineEdit, std::bind(&GamesListView::onSearchTextChanged,
-                                                                                   this, std::placeholders::_1));
-                this->lineEdit->setBorderThickness(4.0f);
-                this->lineEdit->setBorderColor(MCDBorderColor);
-                this->lineEdit->setMinWidthPercentage(90.0f);
-                this->lineEdit->setMaxWidthPercentage(90.0f);
-                this->lineEdit->setMargins(20.0f, 0.0f, 20.0f, 0.0f);
-                this->lineEdit->setFocusable(false);
-                this->addView(this->lineEdit);
+            MODCD_LOG_DEBUG("[GamesListView]: building games UI");
+            this->lineEdit = new LineEdit(this->initTextForLineEdit, std::bind(&GamesListView::onSearchTextChanged,
+                                                                               this, std::placeholders::_1));
+            this->lineEdit->setBorderThickness(4.0f);
+            this->lineEdit->setBorderColor(MCDBorderColor);
+            this->lineEdit->setMinWidthPercentage(90.0f);
+            this->lineEdit->setMaxWidthPercentage(90.0f);
+            this->lineEdit->setMargins(20.0f, 0.0f, 20.0f, 0.0f);
+            this->lineEdit->setFocusable(false);
+            this->addView(this->lineEdit);
 
-                this->list = new brls::ScrollingFrame();
-                this->listContent = new brls::Box(brls::Axis::COLUMN);
-                this->addIconsRow();
-                this->list->setContentView(this->listContent);
-                this->list->setMinWidthPercentage(100.0f);
-                this->list->setMaxWidthPercentage(100.0f);
-                this->list->setMinHeightPercentage(86.0f);
+            this->list = new brls::ScrollingFrame();
+            this->listContent = new brls::Box(brls::Axis::COLUMN);
+            this->addIconsRow();
+            this->list->setContentView(this->listContent);
+            this->list->setMinWidthPercentage(100.0f);
+            this->list->setMaxWidthPercentage(100.0f);
+            this->list->setMinHeightPercentage(86.0f);
 
-                this->setAlignItems(brls::AlignItems::CENTER);
-                this->removeView(this->loadingView);
-                this->addView(this->list);
+            this->setAlignItems(brls::AlignItems::CENTER);
+            this->removeView(this->loadingView);
+            this->addView(this->list);
 
-                this->registerAction("", brls::ControllerButton::BUTTON_X,
-                                     std::bind(&LineEdit::onClick, this->lineEdit, std::placeholders::_1));
-                this->registerAction("", brls::ControllerButton::BUTTON_B, [this](brls::View*) {
-                    this->onSearchTextChanged("");
-                    this->lineEdit->setCurrentText("");
-                    return true;
-                });
-                this->toast = std::make_unique<ToastView>(
-                    this, brls::Point(1280.0f / 2, round(720.0f - (720.0f / 3 / 2)) + 50.0f));
+            this->registerAction("", brls::ControllerButton::BUTTON_X,
+                                 std::bind(&LineEdit::onClick, this->lineEdit, std::placeholders::_1));
+            this->registerAction("", brls::ControllerButton::BUTTON_B, [this](brls::View*) {
+                this->onSearchTextChanged("");
+                this->lineEdit->setCurrentText("");
+                return true;
+            });
+            this->toast = std::make_unique<ToastView>(
+                this, brls::Point(1280.0f / 2, round(720.0f - (720.0f / 3 / 2)) + 50.0f));
 
+            if (!this->list->getChildren().empty()) {
                 brls::Application::giveFocus(this->list->getChildren()[0]);
-                if (!this->modCD.isOnlineMode()) {
-                    this->offlineDialog =
-                        new brls::Dialog(utils::Localization::get("GamesListView.OfflineDialog.Message"));
-                    this->offlineDialog->addButton(utils::Localization::get("ModView.OfflineDialog.OkButton"), []() {});
-                    this->offlineDialog->open();
-                } else {
-                    try {
-                        checkUpdate();
-                    } catch (const utils::CURLException& curlException) {
-                        MODCD_LOG_ERROR("[{}]: Check update timeout", __PRETTY_FUNCTION__);
-                    }
-                }
-                this->toast->start(utils::Localization::getInterpolated(
-                                       "GamesListView.Toast.FoundedGames",
-                                       {{"count", std::to_string(this->modCD.supportedGames.size())}}),
-                                   ToastColor::OK);
             }
+            if (!this->modCD.isOnlineMode()) {
+                this->offlineDialog = new brls::Dialog(utils::Localization::get("GamesListView.OfflineDialog.Message"));
+                this->offlineDialog->addButton(utils::Localization::get("ModView.OfflineDialog.OkButton"), []() {});
+                this->offlineDialog->open();
+            } else {
+                try {
+                    checkUpdate();
+                } catch (const utils::CURLException&) {
+                    MODCD_LOG_ERROR("[{}]: Check update timeout", __PRETTY_FUNCTION__);
+                }
+            }
+            this->toast->start(utils::Localization::getInterpolated(
+                                   "GamesListView.Toast.FoundedGames",
+                                   {{"count", std::to_string(this->modCD.supportedGames.size())}}),
+                               ToastColor::OK);
+            MODCD_LOG_DEBUG("[GamesListView]: UI ready");
         });
     });
 }

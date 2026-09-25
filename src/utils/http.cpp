@@ -105,6 +105,9 @@ std::string HttpRequester::getText(const std::string& url, long timeout) const {
     curl_easy_setopt(curl, CURLOPT_NOBODY, 0L);
     curl_easy_setopt(curl, CURLOPT_BUFFERSIZE, CURL_BUFFERS_SIZE);
     curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, timeout);
+    // Do not allow DNS/HTTP reads to leave the loading screen stuck forever.
+    curl_easy_setopt(curl, CURLOPT_TIMEOUT, timeout + 5L);
+    curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1L);
 
     CURLcode res = curl_easy_perform(curl);
 

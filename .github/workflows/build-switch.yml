@@ -1,0 +1,50 @@
+name: Build ModCD Switch
+
+on:
+  push:
+    branches:
+      - fix-loading-hang-debug
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: devkitpro/devkita64:latest
+
+    steps:
+      - name: Install git and build tools
+        run: |
+          apt-get update
+          apt-get install -y git cmake make zip
+
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Configure
+        run: cmake -S . -B build -DPLATFORM_SWITCH=ON
+
+      - name: Build NRO
+        run: cmake --build build --target ModCD.nro -j2
+
+      - name: Locate build output
+        run: find build -type f \( -name '*.nro' -o -name '*.elf' \) -print
+
+      - name: Stage artifact
+        run: |
+          mkdir -p artifact
+          NRO="$(find build -type f -name 'ModCD.nro' | head -n 1)"
+          test -n "$NRO"
+          cp "$NRO" artifact/ModCD.nro
+
+      - name: Upload ModCD.nro
+        uses: actions/upload-artifact@v4
+        with:
+          name: ModCD-Switch-debug
+          path: artifact/ModCD.nro
+          if-no-files-found: error
